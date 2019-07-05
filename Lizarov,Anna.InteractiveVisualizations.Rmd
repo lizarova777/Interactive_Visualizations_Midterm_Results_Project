@@ -1,0 +1,220 @@
+---
+title: "Interactive Visualizations"
+author: "Anna Lizarov"
+date: "March 28, 2019"
+output: html_document
+---
+
+Step-by-step instructions for building a Shiny App
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(shiny)
+```
+
+## Basic Button
+
+Review the annotated code below
+
+```{r}
+ui <- fluidPage(actionButton("goButton", "Wake up!"),
+                textOutput("reply"))
+
+server <- function(input, output) {
+  observeEvent(input$goButton, #1. Create reactivity wih input$
+  output$reply <- #2. Save output to output$
+    renderText({"5 more minutes..."})) #3. Build output with render*()
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+## Random Histogram Generator
+
+Now we will build another Shiny App one piece at a time (Only the code starting at line 97 will run). This app will generate a histogram based on random values drawn from a normal distribution, the user will be able to select the number of draws that generate the histogram by using a slider.
+
+1. Begin with the template:
+
+```{r}
+ui <- fluidPage()
+
+server <- function(input, output) {}
+
+shinyApp(ui = ui, server = server)
+```
+
+2. Then, start by defining the user interface (ui) object by describing the components of fluidPage(). We want to use a slider, so the input expression is sliderInput(). We label the slider object "num" and the label that the user will see "Choose a number". Three other arguments are required sepcifically for sliders: 
+
+value: the value the slider will start at when the app loads
+min: the minimum value the slider will have
+max: the maximum value the slider will have
+
+```{r}
+ui <- fluidPage(
+  sliderInput(inputId = "num", label = "Choose a number", 
+    value = 1, min = 1, max = 100)
+)
+```
+
+3. Now we need to define the output expression. Here will we name it "hist"
+
+```{r}
+ui <- fluidPage(
+  sliderInput(inputId = "num", label = "Choose a number", 
+    value = 1, min = 1, max = 100),
+  
+  plotOutput("hist")
+
+)
+```
+
+4. Now that we have defined the ui object we can move on to defining the server object. We are going to call the output label we just defined, "hist" by refering to it as ``"output$hist"``. We will then use the renderPlot() expression to call a plot.
+
+```{r}
+server <- function(input, output) {
+  output$hist <- renderPlot({})
+}
+```
+
+5. The command for generating a random number drawn from a normal distribution is "rnorm()". Try rnorm in teh command line using any number you like between the parentheses. It will draw numbers from a normal distribution with mean of zero and standard deviation of 1. Now, put the hist() command around your rnorm command: 
+
+hist(rnorm())
+
+Now you have generated a random histogram! We want our Shiny App to do this, but with a range of values that the user can choose from.
+
+6. The way to achieve our histogram is to call it from within curly brackets ({}), curly brackets bind a set of commands together so R will read them at the same time. Our complete server function will look like:
+
+```{r}
+server <- function(input, output) {
+  output$hist <- renderPlot({
+    hist(rnorm(input$num))
+  })
+  }
+```
+
+7. We can then put everything together to generate our Shiny App. Run the code below.
+
+```{r}
+ui <- fluidPage(
+  sliderInput(inputId = "num", label = "Choose a number", 
+    value = 1, min = 1, max = 100), plotOutput("hist"))
+
+server <- function(input, output) {
+  output$hist <- renderPlot({
+    hist(rnorm(input$num))
+  })
+}
+
+shinyApp(ui = ui, server = server)
+
+```
+
+
+## Deploy
+
+Go to the [Shiny Apps hosting service](http://www.shinyapps.io/) and set up an account. Transfer your visualization to the RStudio servers according to the instructions [here](http://docs.rstudio.com/shinyapps.io/).
+
+Now see if you can replace the standard histogram in the above Shiny App with a ggplot histogram hosted on shinyapps.io.
+
+```{r}
+ui <- fluidPage(
+  sliderInput(inputId = "num", label = "Choose a number", 
+    value = 1, min = 1, max = 100), plotOutput("gghist"))
+
+server <- function(input, output) {
+  output$gghist <- renderPlot({
+    DG <- data.frame(rnorm(input$num))
+    ggplot(DG, aes(rnorm(input$num))) + geom_histogram()
+  })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+## Final Project
+
+Finally, build an interactive visualization using the data sets quiz-categories.csv and midterm-results.csv. These data represent midterm results from an open book test. The categories represent the skills required to answer each question:
+
+wrangling - Question required data manipulations skills  
+coding - Question required coding skills  
+d.trees - Question invoilved decision trees  
+sna - Question involved social network analysis  
+nlp - Question involved natural language processing  
+viz - Question involved visualization of data  
+n.nets - Question involved neural nets  
+googleable - Question could be answered by searching the internet  
+non-googleable - Question could not be answered through simple searching of the internet  
+jitl - Question involved learning somethimg new (just in time learning)  
+substantive - Question involved wrestling with a complex idea that does not have a definitive answer
+
+```{r}
+# Retrieve datasets
+q <- read.csv("quiz-categories.csv", header=TRUE)
+m <- read.csv("midterm-results.csv", header=TRUE)
+```
+
+```{r}
+catgeories <- colnames(q[,2:12])
+m$Number_Correct <- rowSums(m[,grepl("_c", names(m))])
+m$Percent_Correct <- ((m$Number_Correct)/30)*100
+m$Percent_Correct <- round(m$Percent_Correct, 0)
+```
+
+```{r}
+m$Total_Time = rowSums(m[, grepl("_time", names(m))])
+```
+
+# Skills for each student
+```{r}
+s <- m[,1:32] 
+s <- s[, -2]
+s <- s %>% group_by(id) %>% gather(Question, Score, 2:31 )
+s <- full_join(s, q, by = "Question" )
+s1 <- filter(s, Score != 0)
+```
+
+```{r}
+q2 <- q %>% select(-c(googleable, non.googleable)) %>% summarise_at(c("wrangling", "coding", "d.trees", "sna", "nlp", "viz", "n.nets", "jitl", "substantive"), sum)
+s2 <- s1 %>% group_by(id) %>% summarise_at(c("wrangling", "coding", "d.trees", "sna", "nlp", "viz", "n.nets", "jitl", "substantive"), sum)
+s3 <- s2 %>% mutate(pct_wrangling = wrangling/q2$wrangling, pct_coding = coding/q2$coding, pct_d.trees=d.trees/q2$d.trees, pct_sna = sna/q2$sna, pct_nlp = nlp/q2$nlp, pct_viz = viz/q2$viz, pct_n.nets = n.nets/q2$n.nets, pct_jitl = jitl/q2$jitl, pct_substantive = substantive/q2$substantive)
+s4 <- s3[,c(1, 11:19)]
+s5 <- s4 %>% gather(Skill, Percent, 2:10 )
+s6 <- s5 %>% group_by(Skill) %>% spread(id, Percent)
+```
+
+
+#Visualization
+```{r}
+ui <- fluidPage(
+  titlePanel("Skill Mastery"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(inputId = "id", label = "Student ID:", choices= s5$id, hr())
+      ),
+  mainPanel(plotOutput("skillhist"))
+  )
+)
+  
+
+server <- function(input, output) {
+  output$skillhist <- renderPlot({
+    data <- reactive(s5[s5$id%in% input$id, ])
+    ggplot(data(), aes(Skill,Percent)) + geom_col(fill="blue") + labs(title = "Skill Mastery", y = "Portion Correct") + scale_x_discrete(labels = c("Coding", "D.Trees", "JITL", "Neural Networks", "NLP", "SNA", "Substantive", "Viz", "Wrangling" ))
+  })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
