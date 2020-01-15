@@ -28,4 +28,4 @@ The purpose of this project is to build a couple of basic Shiny Apps and then  c
 ## Dashboard Links:
 
    *[Interactive Visualizations Link](https://lizarova777.shinyapps.io/Interactive_Visualizations/)
-   *[Midterm Results Link](https://lizarova777.shinyapps.io/Midterm_Results/)
+   <br/>*[Midterm Results Link](https://lizarova777.shinyapps.io/Midterm_Results/)
