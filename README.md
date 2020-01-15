@@ -6,7 +6,7 @@ Interactive visualization is becoming a more prominent feature of reporting. Bus
 
 ## Project Objective:
 
-The purpose of this project is to build a couple of basic Shiny Apps and then  create an interactive visualization of some midterm test data that can aid student learning. This visualization consists of skill mastery for each student based on the midterm results, which can be seen below. The skills are as follows: coding, decision trees, just-in-time-learning (JITL), neural networks, natural language processing (NLP), social network analysis (SNA), substantive meaning from the analysis (Substantive), data visualizations (Viz), and data wrangling. 
+The purpose of this project is to build a couple of basic Shiny Apps and then  create an interactive visualization of some midterm test data that can aid student learning. This dashboard consists of skill mastery for each student based on the midterm results, which can be seen below. The skills are as follows: coding, decision trees, just-in-time-learning (JITL), neural networks, natural language processing (NLP), social network analysis (SNA), substantive meaning from the analysis (Substantive), data visualizations (Viz), and data wrangling. It also includes scatterplot which displays the relationship between the student's grades, total time spent on the midterm and total click count where the user chooses the variables for the x-axis and y-axis and what variable to color by. Each data point on the scatterplot represents student's data.  
 
 
 ## Datasets:

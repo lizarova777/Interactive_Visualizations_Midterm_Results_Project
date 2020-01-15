@@ -155,16 +155,26 @@ q <- read.csv("quiz-categories.csv", header=TRUE)
 m <- read.csv("midterm-results.csv", header=TRUE)
 ```
 
+# Aggregate Data
 ```{r}
 catgeories <- colnames(q[,2:12])
 m$Number_Correct <- rowSums(m[,grepl("_c", names(m))])
 m$Percent_Correct <- ((m$Number_Correct)/30)*100
 m$Percent_Correct <- round(m$Percent_Correct, 0)
+m$Total_Time = rowSums(m[, grepl("_time", names(m))])
+m$Total_ClickCount = rowSums(m[, grepl("_Click.Count", names(m))])
 ```
 
+# Per Question
 ```{r}
-m$Total_Time = rowSums(m[, grepl("_time", names(m))])
+qu <- m[,grepl("_c", names(m))]
+qu2 <- qu %>% gather(Question, Result, 1:30) %>% group_by(Question) %>% summarise(Total_Result = sum(Result))
+qua <- m[,grepl("_Click.Count", names(m))]
+qu3 <- qua %>% gather(Question, ClickCount, 1:28) %>% group_by(Question) %>% summarise(Click_Count = sum(ClickCount))
+qub <- m[, grepl("_time", names(m))]
+qu4 <- qub %>% gather(Question,Time, 1:28) %>% group_by(Question) %>% summarise(Total_Time = sum(Time))
 ```
+
 
 # Skills for each student
 ```{r}
@@ -187,14 +197,36 @@ s6 <- s5 %>% group_by(Skill) %>% spread(id, Percent)
 
 #Visualization
 ```{r}
-ui <- fluidPage(
-  titlePanel("Skill Mastery"),
-  sidebarLayout(
-    sidebarPanel(
-      selectInput(inputId = "id", label = "Student ID:", choices= s5$id, hr())
-      ),
-  mainPanel(plotOutput("skillhist"))
-  )
+ui <- navbarPage("Midterm Results Dashboard",
+             tabPanel("Skill Mastery",
+                      fluidPage(
+                          titlePanel("Skill Mastery"),
+                            sidebarLayout(
+                                  sidebarPanel(
+                                    selectInput(inputId = "id", label = "Student ID:", choices= s5$id, hr())
+                                        ),
+                                  mainPanel(plotOutput("skillhist"))
+  
+                                  )
+                           )
+                      ),
+             tabPanel("Time Spent vs. Grades vs. Click Count",
+                      fluidPage(
+                        titlePanel("Time Spent vs. Grades vs. Click Count"),
+                        sidebarLayout(
+             sidebarPanel(
+               selectInput(inputId = "x", label = "X-axis:", choices = c("Percent_Correct", "Total_Time", "Total_ClickCount"), selected = "Total_Time"),
+               selectInput(inputId = "y", label = "Y-axis:", choices = c("Percent_Correct", "Total_Time", "Total_ClickCount"), selected = "Total_ClickCount"),
+               selectInput(inputId = "col", label = "Color by:", choices = c("Percent_Correct", "Total_Time", "Total_ClickCount"), selected = "Percent_Correct")
+                 
+               ),
+        mainPanel(
+            textOutput("selected_y"),
+            textOutput("selected_x"),
+            textOutput("selected_color"),
+          plotOutput("timegradesscatter"))))         
+        )
+  
 )
   
 
@@ -202,19 +234,21 @@ server <- function(input, output) {
   output$skillhist <- renderPlot({
     data <- reactive(s5[s5$id%in% input$id, ])
     ggplot(data(), aes(Skill,Percent)) + geom_col(fill="blue") + labs(title = "Skill Mastery", y = "Portion Correct") + scale_x_discrete(labels = c("Coding", "D.Trees", "JITL", "Neural Networks", "NLP", "SNA", "Substantive", "Viz", "Wrangling" ))
+  });
+  output$timegradesscatter <- renderPlot({
+    data <- reactive({
+      switch(input$y,
+             Percent_Correct = m$Percent_Correct,
+             Total_Time = m$Total_Time,
+             Click_Count = m$Total_ClickCount )
+    }
+      
+    )
+        ggplot(data = m, mapping= aes_string(input$x, input$y, col= input$col)) + geom_point(size=10) + labs(title = "Time Spent, Grade, and Click Count") + theme_bw()
+    
   })
 }
 
 shinyApp(ui = ui, server = server)
-```
-
-
-
-```{r}
-
-```
-
-```{r}
-
 ```
 
